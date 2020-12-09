@@ -316,8 +316,47 @@
 					objs.messageC.style.opacity = calcValues(values.messageC_opacity_out, currentYOffset);
 					objs.pinC.style.transform = `scaleY(${calcValues(values.pinC_scaleY, currentYOffset)})`;
 				}
+
+				// currentScene 3 에서 쓰는 캔버스를 미리 그려주기 시작
+				if (scrollRatio > 0.9) {
+					const objs = sceneInfo[3].objs;
+					const values = sceneInfo[3].values;
+					const widthRatio = window.innerWidth / objs.canvas.width;
+					const heightRatio = window.innerHeight / objs.canvas.height;
+					let canvasScaleRatio;
+
+					if (widthRatio <= heightRatio) {
+						// 캔버스보다 브라우저 창이 홀쭉한 경우
+						canvasScaleRatio = heightRatio;
+					} else {
+						// 캔버스보다 브라우저 창이 납작한 경우
+						canvasScaleRatio = widthRatio;
+					}
+
+					objs.canvas.style.transform = `scale(${canvasScaleRatio})`;
+					objs.context.fillStyle = 'white';
+					objs.context.drawImage(objs.images[0], 0, 0);
+
+					// 캔버스 사이즈에 맞춰 가정한 innerWidth와 innerHeight
+					// 스크롤바 포함 넓이 = window.innerHeight
+					// 스크롤바 제외 넓이 = document.body.offsetWidth
+					const recalculatedInnerWidth = document.body.offsetWidth / canvasScaleRatio + 1;
+					//const recalculatedInnerHeight = window.innerHeight / canvasScaleRatio;
+
+					const whiteRectWidth = recalculatedInnerWidth * 0.15;
+					values.rect1X[0] = (objs.canvas.width - recalculatedInnerWidth) / 2;
+					values.rect1X[1] = values.rect1X[0] - whiteRectWidth;
+					values.rect2X[0] = values.rect1X[0] + recalculatedInnerWidth - whiteRectWidth;
+					values.rect2X[1] = values.rect2X[0] + whiteRectWidth;
+
+					// 좌우 흰색 박스 그리기
+					objs.context.fillRect(parseInt(values.rect1X[0]), 0, parseInt(whiteRectWidth), objs.canvas.height);
+					objs.context.fillRect(parseInt(values.rect2X[0]), 0, parseInt(whiteRectWidth), objs.canvas.height);
+				}
+
 				break;
 			case 3:
+				let step = 0;
 				// 가로 세로 모두 꽉 차게 하기 위해 여기서 계산
 				const widthRatio = window.innerWidth / objs.canvas.width;
 				const heightRatio = window.innerHeight / objs.canvas.height;
@@ -338,11 +377,10 @@
 				// 캔버스 사이즈에 맞춰 가정한 innerWidth와 innerHeight
 				// 스크롤바 포함 넓이 = window.innerHeight
 				// 스크롤바 제외 넓이 = document.body.offsetWidth
-				const recalculatedInnerWidth = document.body.offsetWidth / canvasScaleRatio;
+				const recalculatedInnerWidth = document.body.offsetWidth / canvasScaleRatio + 1;
 				//const recalculatedInnerHeight = window.innerHeight / canvasScaleRatio;
 
 				if (!values.rectStartY) {
-					//values.rectStartY = objs.canvas.getBoundingClientRect().top;
 					values.rectStartY = objs.canvas.offsetTop + (objs.canvas.height - objs.canvas.height * canvasScaleRatio) / 2;
 					values.rect1X[2].start = window.innerHeight / 2 / scrollHeight;
 					values.rect2X[2].start = window.innerHeight / 2 / scrollHeight;
@@ -357,8 +395,6 @@
 				values.rect2X[1] = values.rect2X[0] + whiteRectWidth;
 
 				// 좌우 흰색 박스 그리기
-				// objs.context.fillRect(values.rect1X[0], 0, parseInt(whiteRectWidth), objs.canvas.height);
-				// objs.context.fillRect(values.rect2X[0], 0, parseInt(whiteRectWidth), objs.canvas.height);
 				objs.context.fillRect(
 					parseInt(calcValues(values.rect1X, currentYOffset)),
 					0,
@@ -371,6 +407,15 @@
 					parseInt(whiteRectWidth),
 					objs.canvas.height
 				);
+				// 캔버스가 브라우저 상단에 닿지 않았다면
+				if (scrollRatio < values.rect1X[2].end) {
+					step = 1;
+					objs.canvas.classList.remove('sticky');
+				} else {
+					step = 2;
+					objs.canvas.classList.add('sticky');
+					objs.canvas.style.top = `${-(objs.canvas.height - objs.canvas.height * canvasScaleRatio) / 2}px`;
+				}
 
 				break;
 		}

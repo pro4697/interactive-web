@@ -199,7 +199,9 @@ a {
 	left: 50%;
 }
 
-.image-blend-canvas {
+.sticky {
+	position: fixed;
+	top: 0;
 }
 
 #scroll-section-3 {
